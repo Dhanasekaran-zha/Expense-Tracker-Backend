@@ -34,7 +34,39 @@ exports.getAllExpense = async (req, res) => {
 
     try {
         const expense = await Expense.find({userId}).sort({date: -1})
-        res.json(expense)
+        res.status(200).json(expense)
+    } catch (e) {
+        res.status(500).json({message: "Server Error", error: e.message})
+    }
+}
+
+//Get All Expense By Month
+exports.getAllExpenseByMonth = async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const {year, month} = req.params;
+
+        // Convert year and month to numbers
+        const y = parseInt(year);
+        const m = parseInt(month);
+
+        //Validate year and month
+        if (isNaN(y) || isNaN(m) || m < 1 || m > 12) {
+            return res.status(400).json({message: "Invalid year or month"});
+        }
+
+        // Get start and end of the month
+        const startDate = new Date(y, m - 1, 1); // First day of the month
+        const endDate = new Date(y, m, 1); // First day of the next month
+
+        const expense = await Expense.find({
+            userId,
+            date: {$gte: startDate, $lt: endDate}
+        }).sort({date: -1});
+
+        res.status(200).json(expense);
+
     } catch (e) {
         res.status(500).json({message: "Server Error", error: e.message})
     }
@@ -49,7 +81,6 @@ exports.deleteExpense = async (req, res) => {
         res.status(500).json({message: "Server Error", error: e.message})
     }
 }
-
 
 //Download Expense
 exports.downloadExpenseExcel = async (req, res) => {
